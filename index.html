@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech to Text Pad</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #5b86e5, #36d1dc);
+        }
+
+        .audio {
+            background: rgba(255, 255, 255, 0.95);
+            width: 95%;
+            max-width: 600px;
+            padding: 20px 22px 24px;
+            border-radius: 18px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+            backdrop-filter: blur(6px);
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            text-align: center;
+            margin-bottom: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            margin-top: 16px;
+            margin-bottom: 8px;
+        }
+
+        textarea {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid #c9ced6;
+            padding: 10px 12px;
+            font-size: 0.98rem;
+            resize: vertical;
+            min-height: 160px;
+            outline: none;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        textarea:focus {
+            border-color: #5b86e5;
+            box-shadow: 0 0 0 2px rgba(91, 134, 229, 0.25);
+        }
+
+        .btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            border: none;
+            border-radius: 999px;
+            padding: 8px 10px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s;
+        }
+
+        .startbtn {
+            background: #2ecc71;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
+        }
+
+        .stopbtn {
+            background: #e74c3c;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4);
+        }
+
+        .savebtn {
+            background: #3498db;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        #noteList {
+            list-style: none;
+            margin-top: 4px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        #noteList li {
+            background: #f4f6fb;
+            border-radius: 8px;
+            padding: 6px 8px;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            border: 1px solid #dde3f0;
+        }
+
+        .info {
+            font-size: 0.8rem;
+            margin-top: 6px;
+            color: #555;
+        }
+
+        .status {
+            font-size: 0.85rem;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        .status.listening {
+            color: #27ae60;
+        }
+
+        .status.stopped {
+            color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <div class="audio">
+        <h1>Speech to Text Pad</h1>
+        <textarea id="textarea" rows="10" placeholder="speech will appear here..."></textarea>
+
+        <div class="btns">
+            <button class="startbtn">Start</button>
+            <button class="stopbtn">Stop</button>
+            <button class="savebtn">Save</button>
+        </div>
+
+        <div class="stop" id="Text">Status: Stopped</div>
+        
+
+        <h2>Saved Notes</h2>
+        <ul id="noteList"></ul>
+    </div>
+
+    <script>
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            alert("Your browser does not support speech recognition. Try opening this page in Chrome.");
+        } else {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = "en-US";
+
+            const textarea = document.querySelector("#textarea");
+            const noteList = document.querySelector("#noteList");
+            const startbtn = document.querySelector(".startbtn");
+            const stopbtn = document.querySelector(".stopbtn");
+            const savebtn = document.querySelector(".savebtn");
+            const statusText = document.querySelector("#Text");
+
+            let finalText = "";
+
+            recognition.onresult = function (det) {
+                let idx = det.results.length - 1;
+                let speech = det.results[idx][0].transcript;
+
+                if (event.results[idx].isFinal) {
+                    finalText += speech + " ";
+                    textarea.value = finalText;
+                } else {
+                    textarea.value = finalText + speech;
+                }
+            };
+
+            recognition.onstart = function () {
+                statusText.textContent = "Status: Listening...";
+                statusText.classList.remove("stopped");
+                statusText.classList.add("listening");
+            };
+
+            recognition.onend = function () {
+                statusText.textContent = "Status: Stopped";
+                statusText.classList.remove("listening");
+                statusText.classList.add("stopped");
+            };
+
+            startbtn.addEventListener("click", function () {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.log(e);
+                }
+            });
+
+            stopbtn.addEventListener("click", function () {
+                recognition.stop();
+            });
+
+            savebtn.addEventListener("click", function () {
+                let typedTxt = textarea.value.trim();
+
+                if (typedTxt !== "") {
+                    let li = document.createElement("li");
+                    li.textContent = typedTxt;
+                    noteList.appendChild(li);
+                    textarea.value = "";
+                    finalText = "";
+                }
+            });
+        }
+    </script>
+</body>
+</html>
